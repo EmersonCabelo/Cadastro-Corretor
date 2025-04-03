@@ -1,14 +1,13 @@
 <?php
-$host = "localhost";
-$dbname = "imovel_guide";
-$usuario = "root";  // Altere se seu MySQL tiver usuário diferente
-$senha = "";        // Altere se sua senha for diferente
+$servername = "localhost";
+$username = "root";
+$password = "";
+$database = "seu_banco"; // Substitua pelo nome do seu banco
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $usuario, $senha);
-    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Erro na conexão: " . $e->getMessage());
+$conn = new mysqli($servername, $username, $password, $database);
+
+if ($conn->connect_error) {
+    die("Falha na conexão: " . $conn->connect_error);
 }
 ?>
 
