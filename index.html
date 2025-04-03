@@ -35,10 +35,11 @@
                 <th>CRECI</th>
                 <th>Nome</th>
                 <th>Data de Cadastro</th>
+                <th>Ações</th>
             </tr>
         </thead>
         <tbody id="tabelaCorretores">
-            <tr><td colspan="5">Carregando...</td></tr>
+            <tr><td colspan="6">Carregando...</td></tr>
         </tbody>
     </table>
 
@@ -64,7 +65,7 @@
             let tabela = document.getElementById("tabelaCorretores");
             tabela.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
 
-            fetch("cadastro-Corretor/listar_corretores.php")
+            fetch("getAll.php")
                 .then(response => response.json())
                 .then(data => {
                     tabela.innerHTML = "";
@@ -78,6 +79,11 @@
                                 <td>${corretor.creci}</td>
                                 <td>${corretor.nome}</td>
                                 <td>${new Date(corretor.data_cadastro).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</td>
+                                <td>
+                            <button class="btn btn-warning btn-sm" onclick="editarCorretor(${corretor.id}, '${corretor.cpf}', '${corretor.creci}', '${corretor.nome}')">Editar</button>
+                            <button class="btn btn-danger btn-sm" onclick="excluirCorretor(${corretor.id})">Excluir</button>
+                        </td>
+                    
                             </tr>`;
                             tabela.innerHTML += row;
                         });
@@ -106,7 +112,7 @@
             formData.append("creci", creci);
             formData.append("nome", nome);
 
-            fetch("salvar_corretor.php", {
+            fetch("create.php", {
                 method: "POST",
                 body: formData
             })
@@ -118,7 +124,7 @@
                     carregarCorretores();
                 }
             })
-            .catch(error => console.error("Erro:", error));
+        
         });
 
         document.getElementById("cpf").addEventListener("input", function (e) {
@@ -130,6 +136,72 @@
         });
 
         carregarCorretores();
+
+        function excluirCorretor(id) {
+    if (!confirm("Tem certeza que deseja excluir este corretor?")) {
+        return;
+    }
+
+    let formData = new FormData();
+    formData.append("id", id);
+
+    fetch("delete.php", {
+        method: "POST",
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            carregarCorretores();
+        }
+    })
+    .catch(error => console.error("Erro ao excluir corretor:", error));
+}
+
+function editarCorretor(id, cpf, creci, nome) {
+    document.getElementById("cpf").value = cpf;
+    document.getElementById("creci").value = creci;
+    document.getElementById("nome").value = nome;
+
+    let botaoEnviar = document.querySelector("#corretorForm button");
+    botaoEnviar.innerText = "Atualizar";
+    botaoEnviar.onclick = function (event) {
+        event.preventDefault();
+
+        let novoCPF = document.getElementById("cpf").value;
+        let novoCreci = document.getElementById("creci").value;
+        let novoNome = document.getElementById("nome").value;
+
+        if (!validarCPF(novoCPF)) {
+            alert("CPF inválido!");
+            return;
+        }
+
+        let formData = new FormData();
+        formData.append("id", id);
+        formData.append("cpf", novoCPF);
+        formData.append("creci", novoCreci);
+        formData.append("nome", novoNome);
+
+        fetch("update.php", {
+            method: "POST",
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            if (data.success) {
+                document.getElementById("corretorForm").reset();
+                botaoEnviar.innerText = "Enviar";
+                botaoEnviar.onclick = null;
+                botaoEnviar.onclick = () => document.getElementById("corretorForm").submit();
+                carregarCorretores();
+            }
+        })
+        .catch(error => console.error("Erro ao editar corretor:", error));
+    };
+}
     </script>
 </body>
 </html>
