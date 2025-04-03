@@ -4,74 +4,131 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="style.css" rel="stylesheet">
     <title>Imóvel Guide</title>
 </head>
-<body class="d-flex align-items-center py-4">
-<main class="w-100 m-auto form-container">
+<body class="container py-4">
+    <h1 class="mb-4">Cadastro de Corretor</h1>
+
     <form id="corretorForm">
-        <h1 class="h3 mb-3 fw-larger">Cadastro de Corretor</h1>
-        
-        <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="cpf" placeholder="Digite seu CPF"/>
-            <label for="cpf">Digite seu CPF</label>
-            <div class="invalid-feedback">O CPF deve ter 11 caracteres.</div>
-        </div>  
-
-        <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="creci" placeholder="Digite seu CRECI"/>
-            <label for="creci">Digite seu CRECI</label>
-            <div class="invalid-feedback">O CRECI deve ter pelo menos 2 caracteres.</div>
+        <div class="mb-3">
+            <label for="cpf" class="form-label">CPF:</label>
+            <input type="text" class="form-control" id="cpf" placeholder="Digite seu CPF" maxlength="14">
         </div>
-
-        <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="nome" placeholder="Digite seu Nome"/>
-            <label for="nome">Digite seu Nome</label>
-            <div class="invalid-feedback">O Nome deve ter pelo menos 2 caracteres.</div>
+        <div class="mb-3">
+            <label for="creci" class="form-label">CRECI:</label>
+            <input type="text" class="form-control" id="creci" placeholder="Digite seu CRECI">
         </div>
-
-        <button type="submit" class="btn btn-primary w-100">Enviar</button>
+        <div class="mb-3">
+            <label for="nome" class="form-label">Nome:</label>
+            <input type="text" class="form-control" id="nome" placeholder="Digite seu Nome">
+        </div>
+        <button type="submit" class="btn btn-primary">Enviar</button>
     </form>
-</main>
 
-<script>
-document.getElementById("corretorForm").addEventListener("submit", function(event) {
-    event.preventDefault(); 
+    <h2 class="mt-5">Corretores Cadastrados</h2>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>CPF</th>
+                <th>CRECI</th>
+                <th>Nome</th>
+                <th>Data de Cadastro</th>
+            </tr>
+        </thead>
+        <tbody id="tabelaCorretores">
+            <tr><td colspan="5">Carregando...</td></tr>
+        </tbody>
+    </table>
 
-    let cpf = document.getElementById("cpf");
-    let creci = document.getElementById("creci");
-    let nome = document.getElementById("nome");
+    <script>
+        function validarCPF(cpf) {
+            cpf = cpf.replace(/\D/g, '');
+            if (cpf.length !== 11) return false;
 
-    let isValid = true;
+            let soma = 0, resto;
+            for (let i = 1; i <= 9; i++) soma += parseInt(cpf[i - 1]) * (11 - i);
+            resto = (soma * 10) % 11;
+            if (resto === 10 || resto === 11) resto = 0;
+            if (resto !== parseInt(cpf[9])) return false;
 
-    if (cpf.value.length !== 11) {
-        cpf.classList.add("is-invalid");
-        isValid = false;
-    } else {
-        cpf.classList.remove("is-invalid");
-    }
+            soma = 0;
+            for (let i = 1; i <= 10; i++) soma += parseInt(cpf[i - 1]) * (12 - i);
+            resto = (soma * 10) % 11;
+            if (resto === 10 || resto === 11) resto = 0;
+            return resto === parseInt(cpf[10]);
+        }
 
-    if (creci.value.length < 2) {
-        creci.classList.add("is-invalid");
-        isValid = false;
-    } else {
-        creci.classList.remove("is-invalid");
-    }
+        function carregarCorretores() {
+            let tabela = document.getElementById("tabelaCorretores");
+            tabela.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
 
-    if (nome.value.length < 2) {
-        nome.classList.add("is-invalid");
-        isValid = false;
-    } else {
-        nome.classList.remove("is-invalid");
-    }
+            fetch("listar_corretores.php")
+                .then(response => response.json())
+                .then(data => {
+                    tabela.innerHTML = "";
+                    if (data.length === 0) {
+                        tabela.innerHTML = "<tr><td colspan='5'>Nenhum corretor cadastrado.</td></tr>";
+                    } else {
+                        data.forEach(corretor => {
+                            let row = `<tr>
+                                <td>${corretor.id}</td>
+                                <td>${corretor.cpf}</td>
+                                <td>${corretor.creci}</td>
+                                <td>${corretor.nome}</td>
+                                <td>${new Date(corretor.data_cadastro).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</td>
+                            </tr>`;
+                            tabela.innerHTML += row;
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error("Erro ao carregar corretores:", error);
+                    tabela.innerHTML = "<tr><td colspan='5'>Erro ao carregar dados.</td></tr>";
+                });
+        }
 
-    if (isValid) {
-        alert("Formulário enviado com sucesso!");
-        // Aqui você pode adicionar o envio real dos dados, como um AJAX request
-        this.submit();
-    }
-});
-</script>
+        document.getElementById("corretorForm").addEventListener("submit", function(event) {
+            event.preventDefault();
 
+            let cpf = document.getElementById("cpf").value;
+            let creci = document.getElementById("creci").value;
+            let nome = document.getElementById("nome").value;
+
+            if (!validarCPF(cpf)) {
+                alert("CPF inválido!");
+                return;
+            }
+
+            let formData = new FormData();
+            formData.append("cpf", cpf);
+            formData.append("creci", creci);
+            formData.append("nome", nome);
+
+            fetch("salvar_corretor.php", {
+                method: "POST",
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message);
+                if (data.success) {
+                    document.getElementById("corretorForm").reset();
+                    carregarCorretores();
+                }
+            })
+            .catch(error => console.error("Erro:", error));
+        });
+
+        document.getElementById("cpf").addEventListener("input", function (e) {
+            let cpf = e.target.value.replace(/\D/g, "");
+            cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+            cpf = cpf.replace(/(\d{3})(\d)/, "$1.$2");
+            cpf = cpf.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+            e.target.value = cpf;
+        });
+
+        carregarCorretores();
+    </script>
 </body>
 </html>
