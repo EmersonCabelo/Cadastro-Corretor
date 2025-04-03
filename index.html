@@ -64,7 +64,7 @@
             let tabela = document.getElementById("tabelaCorretores");
             tabela.innerHTML = "<tr><td colspan='5'>Carregando...</td></tr>";
 
-            fetch("listar_corretores.php")
+            fetch("cadastro-Corretor/listar_corretores.php")
                 .then(response => response.json())
                 .then(data => {
                     tabela.innerHTML = "";
